@@ -1,0 +1,126 @@
+datasource db {
+  provider = "sqlite" // Change to "postgresql" if you're using PostgreSQL
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+model JobOrders {
+  job_order_id         Int             @id @default(autoincrement())
+  job_title            String
+  client_id            Int
+  job_posting_date     DateTime
+  offer_acceptance_date DateTime?
+  status               String
+  role_level           String? 
+  created_by           String? 
+  modified_by          String? 
+  created_at          DateTime        @default(now())
+  modified_at         DateTime        @updatedAt
+  placements          Placements[]
+  candidateSubmissions CandidateSubmissions[]
+  candidateInterviews  CandidateInterviews[]
+
+  RecruitmentCosts RecruitmentCosts[]
+}
+
+model Recruiters {
+  recruiter_id         Int             @id @default(autoincrement())
+  full_name            String
+  email                String          @unique
+  password             String
+  start_date           DateTime
+  created_at          DateTime        @default(now())
+  modified_at         DateTime        @updatedAt
+  placements          Placements[]
+  candidateSubmissions CandidateSubmissions[]
+  candidateInterviews  CandidateInterviews[]
+}
+
+model Candidates {
+  candidate_id         Int             @id @default(autoincrement())
+  full_name            String
+  source_channel_id    Int?
+  email                String?         @unique
+  created_at          DateTime        @default(now())
+  modified_at         DateTime        @updatedAt
+  sourceChannel        SourceChannels? @relation(fields: [source_channel_id], references: [source_channel_id])
+  placements          Placements[]
+  candidateSubmissions CandidateSubmissions[]
+  candidateInterviews  CandidateInterviews[]
+}
+
+model SourceChannels {
+  source_channel_id    Int             @id @default(autoincrement())
+  channel_name         String
+  candidates          Candidates[]
+}
+
+model InterviewStages {
+  stage_id             Int             @id @default(autoincrement())
+  stage_name           String
+  candidateInterviews  CandidateInterviews[]
+}
+
+model Placements {
+  placement_id         Int             @id @default(autoincrement())
+  candidate_id         Int
+  job_order_id         Int
+  recruiter_id         Int
+  placement_date       DateTime
+  placement_fee        Float            // Changed to Float for SQLite compatibility
+  placement_status     String          @default("Pending")
+  created_at          DateTime        @default(now())
+  modified_at         DateTime        @updatedAt
+  candidate           Candidates      @relation(fields: [candidate_id], references: [candidate_id])
+  jobOrder            JobOrders       @relation(fields: [job_order_id], references: [job_order_id])
+  recruiter           Recruiters      @relation(fields: [recruiter_id], references: [recruiter_id])
+}
+
+model CandidateSubmissions {
+  submission_id         Int             @id @default(autoincrement())
+  recruiter_id         Int
+  candidate_id         Int
+  job_order_id         Int
+  submission_date       DateTime
+  created_at          DateTime        @default(now())
+  modified_at         DateTime        @updatedAt
+  recruiter           Recruiters      @relation(fields: [recruiter_id], references: [recruiter_id])
+  candidate           Candidates      @relation(fields: [candidate_id], references: [candidate_id])
+  jobOrder            JobOrders       @relation(fields: [job_order_id], references: [job_order_id])
+}
+
+model CandidateInterviews {
+  interview_id         Int             @id @default(autoincrement())
+  candidate_id         Int
+  recruiter_id         Int
+  job_order_id         Int
+  interview_date       DateTime
+  interview_stage_id    Int?
+  interview_result     String? 
+  created_at          DateTime        @default(now())
+  modified_at         DateTime        @updatedAt
+  candidate           Candidates      @relation(fields: [candidate_id], references: [candidate_id])
+  recruiter           Recruiters      @relation(fields: [recruiter_id], references: [recruiter_id])
+  jobOrder            JobOrders       @relation(fields: [job_order_id], references: [job_order_id])
+  interviewStage      InterviewStages? @relation(fields: [interview_stage_id], references: [stage_id])
+}
+
+model CostTypes {
+  cost_type_id         Int             @id @default(autoincrement())
+  type_name            String
+  recruitmentCosts    RecruitmentCosts[]
+}
+
+model RecruitmentCosts {
+  cost_id              Int             @id @default(autoincrement())
+  job_order_id         Int
+  cost_type_id         Int
+  amount               Float            // Changed to Float for SQLite compatibility
+  date_incurred        DateTime
+  created_at          DateTime        @default(now())
+  modified_at         DateTime        @updatedAt
+  jobOrder            JobOrders       @relation(fields: [job_order_id], references: [job_order_id])
+  costType            CostTypes       @relation(fields: [cost_type_id], references: [cost_type_id])
+}
